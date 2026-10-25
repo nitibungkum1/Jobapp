@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ระบบงานช่างนิติ</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="งานช่าง">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#f2f4f1;--card:#fff;--ink:#1c2927;--mute:#66736f;--line:#dde3df;--acc:#0f766e;--accfg:#fff;--warn:#b45309;--ok:#15803d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#121917;--card:#1b2522;--ink:#e8efec;--mute:#93a39d;--line:#2d3b37;--acc:#2dd4bf;--accfg:#06201c;--warn:#fbbf24;--ok:#4ade80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans Thai",system-ui,sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:12px 14px 80px}
+h1{font-size:18px;margin:6px 0 10px;font-weight:600}h2{font-size:15px;margin:0 0 8px;font-weight:600}
+.seg{display:flex;background:var(--line);border-radius:10px;padding:3px;margin-bottom:12px}
+.seg button{flex:1;border:0;background:none;color:var(--mute);padding:9px;border-radius:8px;font:inherit;font-weight:500}
+.seg button.on{background:var(--card);color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+label{display:block;font-size:13px;color:var(--mute);margin:8px 0 3px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px}
+.btn{width:100%;border:0;border-radius:10px;padding:12px;font:inherit;font-weight:600;background:var(--acc);color:var(--accfg);margin-top:10px}
+.btn.sec{background:var(--line);color:var(--ink)}.btn.sm{width:auto;padding:6px 12px;margin:0}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.chip{font-size:12px;padding:2px 9px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.s-assigned{color:var(--warn)}.s-accepted,.s-checkedin{color:var(--acc)}.s-review{color:#7c3aed}.s-done{color:var(--ok)}
+.mute{color:var(--mute);font-size:13px}
+.sum{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--line)}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.g2{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px}.g3{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center}
+#toast.show{opacity:1}
+.back{background:none;border:0;color:var(--acc);font:inherit;padding:6px 0;font-weight:500}
+#pa{display:none}
+.tb{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:8px}.tb th,.tb td{border-bottom:1px solid var(--line);padding:5px 4px;text-align:left}
+.sig{display:flex;justify-content:space-between;margin-top:50px}
+@media print{.wrap,#toast{display:none!important}#pa{display:block}body{background:#fff!important;color:#000!important;font-size:13px}.tb th,.tb td{border:1px solid #888}.pt h1{font-size:20px;margin:0 0 4px}.pt h2{font-size:15px;margin:14px 0 4px}.pt img{max-width:200px;max-height:200px;margin:4px 6px 0 0;border:1px solid #888}}
+</style>
+</head>
+<body>
+<div class="wrap"><h1>ระบบงานช่างนิติ</h1><div id="app"></div></div>
+<div id="toast"></div><div id="pa"></div>
+<script>
+const SB_URL='https://xlhnmiezazaylabapevg.supabase.co',SB_KEY='sb_publishable_ZEHZvaArAd7FVm9v63JnQQ_fd4-Z1Lw';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const ST={assigned:'รอรับงาน',accepted:'รับงานแล้ว',checkedin:'กำลังทำงาน',review:'รอตรวจ',done:'ปิดงาน'};
+const $=i=>document.getElementById(i),money=n=>Number(n||0).toLocaleString('th-TH');
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const TODAY=ymd(new Date());
+let prof=null,jobs=[],names={},techs=[],U={},av='jobs',sel=null,hf={d:'',t:''},dd=TODAY,pend=null;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),3000)}
+const total=j=>j.job_materials.reduce((s,m)=>s+m.qty*m.unit_price,0)+j.job_expenses.reduce((s,e)=>s+Number(e.amount),0);
+const th=a=>a.length?'<div class="thumbs">'+a.map(p=>'<img src="'+(U[p]||'')+'" alt="รูป">').join('')+'</div>':'';
+const ci=j=>j.checkin_at?new Date(j.checkin_at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})+' น. พิกัด '+j.checkin_lat.toFixed(4)+', '+j.checkin_lng.toFixed(4):'-';
+
+async function load(){
+  const r=await sb.from('jobs').select('*,job_photos(*),job_materials(*),job_expenses(*)').order('job_date',{ascending:false}).order('id',{ascending:false});
+  if(r.error){toast('โหลดข้อมูลไม่สำเร็จ: '+r.error.message);return}
+  jobs=r.data;
+  const p=await sb.from('profiles').select('id,name,role');
+  if(p.data){names={};techs=[];p.data.forEach(x=>{names[x.id]=x.name;if(x.role==='tech')techs.push(x)})}
+  const need=[];jobs.forEach(j=>{j.job_photos.forEach(x=>need.push(x.path));j.job_expenses.forEach(x=>x.receipt_path&&need.push(x.receipt_path))});
+  const nn=need.filter(p=>!U[p]);
+  if(nn.length){const s=await sb.storage.from('job-photos').createSignedUrls(nn,7200);(s.data||[]).forEach(x=>{if(x.signedUrl)U[x.path]=x.signedUrl})}
+}
+async function refresh(){await load();render()}
+async function boot(){
+  const s=(await sb.auth.getSession()).data.session;
+  if(!s){prof=null;render();return}
+  const r=await sb.from('profiles').select('*').eq('id',s.user.id).single();
+  if(r.error||!r.data){toast('ไม่พบโปรไฟล์ผู้ใช้');prof=null;render();return}
+  prof=r.data;await load();render();
+}
+async function login(){
+  const r=await sb.auth.signInWithPassword({email:$('le').value.trim(),password:$('lp').value});
+  if(r.error){toast('เข้าสู่ระบบไม่สำเร็จ: '+r.error.message);return}
+  boot();
+}
+async function logout(){await sb.auth.signOut();sel=null;prof=null;jobs=[];render()}
+
+function render(){
+  if(!prof){$('app').innerHTML='<div class="card"><h2>เข้าสู่ระบบ</h2><label>อีเมล</label><input id="le" type="email" autocomplete="username"><label>รหัสผ่าน</label><input id="lp" type="password" autocomplete="current-password"><button class="btn" onclick="login()">เข้าสู่ระบบ</button></div>';return}
+  const top='<div class="row" style="margin-bottom:10px"><span class="mute">'+esc(prof.name)+' ('+(prof.role==='admin'?'แอดมิน':'ช่าง')+')</span><span><button class="btn sm sec" onclick="refresh()">รีเฟรช</button> <button class="btn sm sec" onclick="logout()">ออก</button></span></div>';
+  $('app').innerHTML=top+(prof.role==='admin'?admin():tech());
+}
+function summary(j){
+  let h='';
+  if(j.checkin_at)h+='<div class="mute">เช็คอิน '+ci(j)+'</div>';
+  const ph=j.job_photos.map(p=>p.path);
+  if(ph.length)h+='<div class="mute">รูปหลังทำงาน</div>'+th(ph);
+  if(j.job_materials.length)h+='<h2 style="margin-top:10px">วัสดุที่เบิก</h2>'+j.job_materials.map(m=>'<div class="sum"><span>'+esc(m.name)+' ×'+m.qty+'</span><span>'+money(m.qty*m.unit_price)+'</span></div>').join('');
+  if(j.job_expenses.length)h+='<h2 style="margin-top:10px">ค่าใช้จ่าย</h2>'+j.job_expenses.map(e=>'<div class="sum"><span>'+esc(e.type)+'</span><span>'+money(e.amount)+'</span></div>'+(e.receipt_path?th([e.receipt_path]):'')).join('');
+  if(total(j))h+='<div class="row" style="margin-top:8px"><b>รวม</b><b>'+money(total(j))+' บาท</b></div>';
+  return h;
+}
+const head=j=>'<div class="row"><b>'+esc(j.customer)+'</b><span class="chip s-'+j.status+'">'+ST[j.status]+'</span></div><div class="mute">'+j.job_date+' / '+esc(j.place)+' / ช่าง'+esc(names[j.tech_id]||'-')+'</div><div>'+esc(j.detail)+'</div>';
+
+/* ---------- แอดมิน ---------- */
+function admin(){
+  const b=[['jobs','งาน'],['hist','ประวัติ'],['day','สรุปวัน']];
+  return '<div class="seg">'+b.map(x=>'<button class="'+(av===x[0]?'on':'')+'" onclick="av=\''+x[0]+'\';render()">'+x[1]+'</button>').join('')+'</div>'+(av==='jobs'?adminJobs():av==='hist'?hist():day());
+}
+function adminJobs(){
+  let h='<div class="card"><h2>สร้างงานใหม่</h2><label>ลูกค้า</label><input id="fc"><label>สถานที่</label><input id="fp"><label>รายละเอียดงาน</label><textarea id="fd" rows="2"></textarea><label>มอบหมายช่าง</label><select id="ft">'+techs.map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('')+'</select><button class="btn" onclick="createJob()">สร้างงานและมอบหมาย</button></div><h2>รายการงาน</h2>';
+  jobs.filter(j=>j.status!=='done').forEach(j=>{h+='<div class="card">'+head(j)+summary(j)+(j.status==='review'?'<button class="btn" onclick="upd('+j.id+',{status:\'done\'},\'ปิดงานแล้ว\')">อนุมัติและปิดงาน</button>':'')+'</div>'});
+  return h;
+}
+async function createJob(){
+  const c=$('fc').value.trim(),p=$('fp').value.trim();
+  if(!c||!p||!$('ft').value){toast('กรอกลูกค้า สถานที่ และเลือกช่างก่อน');return}
+  const r=await sb.from('jobs').insert({customer:c,place:p,detail:$('fd').value.trim(),tech_id:$('ft').value});
+  if(r.error){toast(r.error.message);return}
+  await refresh();toast('สร้างงานแล้ว ช่างจะเห็นในรายการงาน');
+}
+function filt(){return jobs.filter(j=>(!hf.d||j.job_date===hf.d)&&(!hf.t||j.tech_id===hf.t))}
+function hist(){
+  const l=filt();
+  let h='<div class="card"><div class="g3"><div><label style="margin-top:0">วันที่</label><input type="date" value="'+hf.d+'" onchange="hf.d=this.value;render()"></div><div><label style="margin-top:0">ช่าง</label><select onchange="hf.t=this.value;render()"><option value="">ทั้งหมด</option>'+techs.map(t=>'<option value="'+t.id+'"'+(t.id===hf.t?' selected':'')+'>'+esc(t.name)+'</option>').join('')+'</select></div></div></div>';
+  if(!l.length)h+='<div class="card mute">ไม่พบงานตามเงื่อนไข</div>';
+  l.forEach(j=>{h+='<div class="card">'+head(j)+summary(j)+'<button class="btn sec" onclick="printJob('+j.id+')">พิมพ์ใบรายงานงาน</button></div>'});
+  return h;
+}
+function dayHtml(l){
+  let ms=0,es=0;l.forEach(j=>{j.job_materials.forEach(m=>ms+=m.qty*m.unit_price);j.job_expenses.forEach(e=>es+=Number(e.amount))});
+  let h='<table class="tb"><tr><th>สถานะ</th><th>จำนวนงาน</th></tr><tr><td>งานทั้งหมด</td><td>'+l.length+'</td></tr>'+Object.keys(ST).map(k=>'<tr><td>'+ST[k]+'</td><td>'+l.filter(j=>j.status===k).length+'</td></tr>').join('')+'</table>';
+  h+='<h2>แยกตามช่าง</h2><table class="tb"><tr><th>ช่าง</th><th>งาน</th><th>ค่าใช้จ่ายรวม (บาท)</th></tr>'+techs.map(t=>{const x=l.filter(j=>j.tech_id===t.id);return '<tr><td>'+esc(t.name)+'</td><td>'+x.length+'</td><td>'+money(x.reduce((s,j)=>s+total(j),0))+'</td></tr>'}).join('')+'</table>';
+  h+='<h2>รายการงาน</h2><table class="tb"><tr><th>ลูกค้า</th><th>ช่าง</th><th>สถานะ</th><th>บาท</th></tr>'+(l.length?l.map(j=>'<tr><td>'+esc(j.customer)+'</td><td>'+esc(names[j.tech_id]||'-')+'</td><td>'+ST[j.status]+'</td><td>'+money(total(j))+'</td></tr>').join(''):'<tr><td colspan="4">ไม่มีงาน</td></tr>')+'</table>';
+  return h+'<p>ค่าวัสดุ '+money(ms)+' บาท, ค่าใช้จ่ายอื่น '+money(es)+' บาท, <b>รวม '+money(ms+es)+' บาท</b></p>';
+}
+function day(){
+  const l=jobs.filter(j=>j.job_date===dd);
+  return '<div class="card"><label style="margin-top:0">วันที่</label><input type="date" value="'+dd+'" onchange="dd=this.value||TODAY;render()"></div><div class="card"><h2>สรุปประจำวัน '+dd+'</h2>'+dayHtml(l)+'<button class="btn" onclick="printDay()">พิมพ์สรุปประจำวัน</button></div>';
+}
+function jobDoc(j){
+  return '<div class="pt"><h1>ใบรายงานงานช่าง #'+j.id+'</h1><p>วันที่ '+j.job_date+' / '+ST[j.status]+'</p><table class="tb"><tr><th>ลูกค้า</th><td>'+esc(j.customer)+'</td></tr><tr><th>สถานที่</th><td>'+esc(j.place)+'</td></tr><tr><th>รายละเอียด</th><td>'+esc(j.detail)+'</td></tr><tr><th>ช่าง</th><td>'+esc(names[j.tech_id]||'-')+'</td></tr><tr><th>เช็คอิน</th><td>'+ci(j)+'</td></tr></table>'
+  +'<h2>วัสดุที่เบิก</h2><table class="tb"><tr><th>รายการ</th><th>จำนวน</th><th>ราคา/หน่วย</th><th>รวม</th></tr>'+(j.job_materials.length?j.job_materials.map(m=>'<tr><td>'+esc(m.name)+'</td><td>'+m.qty+'</td><td>'+money(m.unit_price)+'</td><td>'+money(m.qty*m.unit_price)+'</td></tr>').join(''):'<tr><td colspan="4">-</td></tr>')+'</table>'
+  +'<h2>ค่าใช้จ่าย</h2><table class="tb"><tr><th>ประเภท</th><th>จำนวนเงิน</th><th>ใบเสร็จ</th></tr>'+(j.job_expenses.length?j.job_expenses.map(e=>'<tr><td>'+esc(e.type)+'</td><td>'+money(e.amount)+'</td><td>'+(e.receipt_path?'<img src="'+(U[e.receipt_path]||'')+'" alt="ใบเสร็จ">':'-')+'</td></tr>').join(''):'<tr><td colspan="3">-</td></tr>')+'</table>'
+  +(j.job_photos.length?'<h2>รูปหลังทำงาน</h2>'+j.job_photos.map(p=>'<img src="'+(U[p.path]||'')+'" alt="รูป">').join(''):'')
+  +'<p><b>รวมทั้งสิ้น '+money(total(j))+' บาท</b></p><div class="sig"><span>ลงชื่อ ........................ ช่าง</span><span>ลงชื่อ ........................ ผู้ตรวจ</span></div></div>';
+}
+function doPrint(h){$('pa').innerHTML=h;setTimeout(()=>{try{window.print()}catch(e){toast('เปิดในเบราว์เซอร์เพื่อสั่งพิมพ์')}},400)}
+function printJob(id){doPrint(jobDoc(jobs.filter(j=>j.id===id)[0]))}
+function printDay(){doPrint('<div class="pt"><h1>สรุปงานประจำวัน '+dd+'</h1>'+dayHtml(jobs.filter(j=>j.job_date===dd))+'<div class="sig"><span>ลงชื่อ ........................ ผู้จัดทำ</span><span>ลงชื่อ ........................ ผู้อนุมัติ</span></div></div>')}
+
+/* ---------- ช่าง ---------- */
+function tech(){
+  if(sel)return detail(jobs.filter(j=>j.id===sel)[0]);
+  if(!jobs.length)return '<div class="card mute">ยังไม่มีงาน รอแอดมินมอบหมายงานให้</div>';
+  return '<h2>งานของฉัน</h2>'+jobs.map(j=>'<div class="card" onclick="sel='+j.id+';render()">'+head(j)+'</div>').join('');
+}
+function detail(j){
+  if(!j){sel=null;return tech()}
+  let h='<button class="back" onclick="sel=null;pend=null;render()">‹ กลับ</button><div class="card">'+head(j)+'</div>';
+  if(j.status==='assigned')h+='<button class="btn" onclick="upd('+j.id+',{status:\'accepted\'},\'รับงานแล้ว\')">รับงาน</button>';
+  else if(j.status==='accepted')h+='<button class="btn" onclick="checkin('+j.id+')">เช็คอินหน้างาน (GPS)</button>';
+  else if(j.status==='checkedin'){
+    h+='<div class="card"><div class="mute">เช็คอิน '+ci(j)+'</div></div>';
+    h+='<div class="card"><h2>รูปหลังทำงาน</h2><input type="file" accept="image/*" capture="environment" onchange="addPhoto(this,'+j.id+')">'+th(j.job_photos.map(p=>p.path))+'</div>';
+    h+='<div class="card"><h2>เบิกวัสดุ</h2>'+j.job_materials.map(m=>'<div class="sum"><span>'+esc(m.name)+' ×'+m.qty+'</span><span>'+money(m.qty*m.unit_price)+'</span></div>').join('')+'<div class="g2"><input id="mn" placeholder="ชื่อวัสดุ"><input id="mq" type="number" placeholder="จำนวน"><input id="mp" type="number" placeholder="ราคา"></div><button class="btn sec" onclick="addMat('+j.id+')">เพิ่มวัสดุ</button></div>';
+    h+='<div class="card"><h2>ค่าใช้จ่าย + ใบเสร็จ</h2>'+j.job_expenses.map(e=>'<div class="sum"><span>'+esc(e.type)+'</span><span>'+money(e.amount)+'</span></div>'+(e.receipt_path?th([e.receipt_path]):'')).join('')+'<div class="g3"><select id="et"><option>ค่าเดินทาง</option><option>ค่าวัสดุซื้อเพิ่ม</option><option>ค่าอาหาร</option><option>อื่น ๆ</option></select><input id="ea" type="number" placeholder="จำนวนเงิน"></div><label>ถ่ายรูปใบเสร็จ <span id="rn"></span></label><input type="file" accept="image/*" capture="environment" onchange="pend=this.files[0];$(\'rn\').textContent=pend?\'(เลือกรูปแล้ว)\':\'\'"><button class="btn sec" onclick="addExp('+j.id+')">เพิ่มค่าใช้จ่าย</button></div>';
+    h+='<div class="row"><b>รวมทั้งหมด</b><b>'+money(total(j))+' บาท</b></div><button class="btn" onclick="finish('+j.id+')">ส่งจบงาน</button>';
+  }else h+='<div class="card">'+summary(j)+'</div>';
+  return h;
+}
+async function upd(id,patch,msg){
+  const r=await sb.from('jobs').update(patch).eq('id',id);
+  if(r.error){toast(r.error.message);return}
+  await refresh();if(msg)toast(msg);
+}
+function checkin(id){
+  toast('กำลังหาตำแหน่ง...');
+  navigator.geolocation.getCurrentPosition(p=>upd(id,{status:'checkedin',checkin_at:new Date().toISOString(),checkin_lat:p.coords.latitude,checkin_lng:p.coords.longitude},'เช็คอินสำเร็จ'),()=>toast('เปิดสิทธิ์ตำแหน่ง (Location) ให้เบราว์เซอร์ก่อน แล้วกดใหม่'),{enableHighAccuracy:true,timeout:15000});
+}
+function shrink(f){return new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const s=Math.min(1,1280/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);c.toBlob(ok,'image/jpeg',.7)};i.onerror=no;i.src=URL.createObjectURL(f)})}
+async function up(f,jid){
+  const b=await shrink(f),path=jid+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';
+  const r=await sb.storage.from('job-photos').upload(path,b,{contentType:'image/jpeg'});
+  if(r.error)throw r.error;return path;
+}
+async function addPhoto(inp,id){
+  const f=inp.files[0];if(!f)return;toast('กำลังอัปโหลดรูป...');
+  try{const path=await up(f,id);const r=await sb.from('job_photos').insert({job_id:id,kind:'work',path:path});if(r.error)throw r.error;await refresh();toast('อัปโหลดแล้ว')}catch(e){toast('ผิดพลาด: '+e.message)}
+}
+async function addMat(id){
+  const n=$('mn').value.trim(),q=Number($('mq').value),p=Number($('mp').value);
+  if(!n||!q){toast('กรอกชื่อวัสดุและจำนวน');return}
+  const r=await sb.from('job_materials').insert({job_id:id,name:n,qty:q,unit_price:p||0});
+  if(r.error){toast(r.error.message);return}await refresh();
+}
+async function addExp(id){
+  const a=Number($('ea').value);
+  if(!a){toast('กรอกจำนวนเงิน');return}
+  if(!pend){toast('ถ่ายรูปใบเสร็จก่อน');return}
+  toast('กำลังบันทึก...');
+  try{const path=await up(pend,id);const r=await sb.from('job_expenses').insert({job_id:id,type:$('et').value,amount:a,receipt_path:path});if(r.error)throw r.error;pend=null;await refresh();toast('บันทึกแล้ว')}catch(e){toast('ผิดพลาด: '+e.message)}
+}
+function finish(id){
+  const j=jobs.filter(x=>x.id===id)[0];
+  if(!j.job_photos.length){toast('ถ่ายรูปหลังทำงานอย่างน้อย 1 รูป');return}
+  sel=null;pend=null;upd(id,{status:'review',finished_at:new Date().toISOString()},'ส่งจบงานแล้ว รอแอดมินตรวจ');
+}
+/* ช่างเห็นงานใหม่เองทุก 20 วินาที (เมื่ออยู่หน้ารายการ) */
+setInterval(async()=>{
+  if(prof&&prof.role==='tech'&&!sel){const n0=jobs.filter(j=>j.status==='assigned').length;await load();if(jobs.filter(j=>j.status==='assigned').length>n0)toast('มีงานใหม่!');render()}
+},20000);
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+boot();
+</script>
+</body>
+</html>
