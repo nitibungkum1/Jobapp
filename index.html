@@ -13,6 +13,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "09b2783b-326d-4b09-af2b-c3a24ac78268",
+    });
+  });
+</script>
+
 <style>
 :root{--bg:#f2f4f1;--card:#fff;--ink:#1c2927;--mute:#66736f;--line:#dde3df;--acc:#0f766e;--accfg:#fff;--warn:#b45309;--ok:#15803d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root{--bg:#121917;--card:#1b2522;--ink:#e8efec;--mute:#93a39d;--line:#2d3b37;--acc:#2dd4bf;--accfg:#06201c;--warn:#fbbf24;--ok:#4ade80}}
